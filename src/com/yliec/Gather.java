@@ -15,7 +15,16 @@ import java.util.regex.Pattern;
  * 网页内容采集器，通过URL，采集页面内容以及相关URL
  * Created by Lecion on 1/21/15.
  */
-public class Gather {
+public class Gather implements Runnable{
+
+    private String[] urlFilter = {"miibeian"};
+
+    private URLManager manager = null;
+
+    public Gather(URLManager manager) {
+        this.manager = manager;
+    }
+
     public void getPage(String urlStr) throws MalformedURLException {
         URL url = new URL(urlStr);
         try {
@@ -67,7 +76,7 @@ public class Gather {
             String rs = url.substring(start+1, end);
             //处理相对地址
             if (!(rs.startsWith("http://") || rs.startsWith("https://"))) {
-                if (rs.startsWith("#")) {
+                if (rs.startsWith("#") || rs.startsWith("javascript:") || rs.contains(urlFilter[0])) {
                     continue;
                 }
                 if (rs.startsWith("//")) {
@@ -78,10 +87,24 @@ public class Gather {
                 } else {
                     rs = urlStr + rs;
                 }
-                urls.add(rs);
+                //urls.add(rs);
+
             }
+            manager.addUrl(rs);
             System.out.println(rs);
         }
         return urls;
+    }
+
+    @Override
+    public void run() {
+        while (true) {
+            try {
+                getPage(manager.getUrl());
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 }
