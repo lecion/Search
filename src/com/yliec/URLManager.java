@@ -16,7 +16,7 @@ public class URLManager {
 
     private BlockingDeque<String> unvisited;
 
-    private String startUrl = "http://www.zhihu.com";
+    private String startUrl = "http://www.zhihu.com/";
 
     private URLManager() {
         visited = new CopyOnWriteArraySet<String>();

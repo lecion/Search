@@ -7,6 +7,9 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,8 +34,19 @@ public class Gather implements Runnable{
             URLConnection conn = url.openConnection();
             InputStream is = conn.getInputStream();
             String content = readContentFromStream(is);
+            Connection con = DBManager.getConnection();
+            PreparedStatement psmt = null;
+            String sql = "insert into website (content) values (?)";
+            psmt = con.prepareStatement(sql);
+            psmt.setString(1, content);
+            psmt.execute();
+            psmt.close();
+//            psmt = DBManager.getConnection().prepareStatement(sql);
+//            System.out.println(content);
             getUrlFromContent(content, urlStr);
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
@@ -76,7 +90,7 @@ public class Gather implements Runnable{
             String rs = url.substring(start+1, end);
             //处理相对地址
             if (!(rs.startsWith("http://") || rs.startsWith("https://"))) {
-                if (rs.startsWith("#") || rs.startsWith("javascript:") || rs.contains(urlFilter[0])) {
+                if (rs.startsWith("#") || rs.startsWith("javascript:") || rs.contains(urlFilter[0]) || rs.contains("google")) {
                     continue;
                 }
                 if (rs.startsWith("//")) {
@@ -88,7 +102,6 @@ public class Gather implements Runnable{
                     rs = urlStr + rs;
                 }
                 //urls.add(rs);
-
             }
             manager.addUrl(rs);
             System.out.println(rs);
@@ -100,8 +113,11 @@ public class Gather implements Runnable{
     public void run() {
         while (true) {
             try {
+                Thread.sleep(100);
                 getPage(manager.getUrl());
             } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
